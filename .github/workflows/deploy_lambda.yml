@@ -46,5 +46,5 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: eu-north-1
           function_name: meff_options_scraper
-          s3_bucket: your-s3-bucket-name
+          s3_bucket: lambda-deploy-miax-practica-cloud
           s3_key: lambda_function.zip
