@@ -4,7 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import pandas as pd
 import time
-import numpy as np
+from numpy import sqrt, log, exp, nan
 from scipy.stats import norm
 from scipy.optimize import brentq
 import boto3
@@ -40,24 +40,24 @@ def calculate_T(expiration_date, today_str):
 def black_scholes_price(S, K, T, r, sigma, option_type="call"):
     if T <= 0 or sigma <= 0:
         return 0.0
-    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
+    d1 = (log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * sqrt(T))
+    d2 = d1 - sigma * sqrt(T)
     if option_type == "call":
-        return S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+        return S * norm.cdf(d1) - K * exp(-r * T) * norm.cdf(d2)
     elif option_type == "put":
-        return K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+        return K * exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
 def implied_volatility(S, K, T, r, market_price, option_type="call"):
     if T == 0 or market_price == 0:
         print("Invalid parameters for IV calculation")
-        return np.nan
+        return nan
     try:
         return brentq(
             lambda sigma: black_scholes_price(S, K, T, r, sigma, option_type) - market_price, 0, 10 
             )
     except ValueError:
         print("No solution found for IV")
-        return np.nan
+        return nan
 
 def scrape_meff_data():
     driver = setup_driver()
@@ -91,7 +91,7 @@ def scrape_meff_data():
                     iv = implied_volatility(S, K, T, r, option_price, option_type)
                     print(f"IV: {iv}")
                 except Exception:
-                    iv = np.nan
+                    iv = nan
                 cols.append(T)
                 cols.append(iv)
                 data.append(cols)
