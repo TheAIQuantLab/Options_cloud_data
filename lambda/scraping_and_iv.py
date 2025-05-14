@@ -60,7 +60,7 @@ def scrape_meff_data():
     driver = setup_driver()
     driver.get("https://www.meff.es/esp/Derivados-Financieros/Ficha/FIEM_MiniIbex_35")
     time.sleep(3)
-
+ 
     table = driver.find_element(By.ID, "tblOpciones")
     table_prices = driver.find_element(By.ID, "Contenido_Contenido_tblFuturos")
     rows = table.find_elements(By.TAG_NAME, "tr")
