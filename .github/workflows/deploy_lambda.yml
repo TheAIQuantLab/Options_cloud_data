@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt -t python
+          pip install -r requirements.txt --platform manylinux2014_x86_64 --target python --only-binary=:all:
           cp -r ./lambda/scraping_and_iv.py db python/
           cd python && zip -r ../lambda_function.zip .
 
@@ -31,3 +31,4 @@ jobs:
           region: eu-north-1
           function_name: meff_options_scraper
           zip_file: lambda_function.zip
+          layers: ["arn:aws:lambda:eu-north-1:123456789012:layer:numpy-scipy:1"]
