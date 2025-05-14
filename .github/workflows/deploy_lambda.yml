@@ -23,11 +23,18 @@ jobs:
           cp -r ./lambda/scraping_and_iv.py db python/
           cd python && zip -r ../lambda_function.zip .
 
+      - name: Debug AWS identity
+        run: |
+          pip install awscli
+          aws sts get-caller-identity --region eu-north-1
+
       - name: Deploy to Lambda
-        uses: appleboy/lambda-action@master
+        uses: appleboy/lambda-action@v0.1.5
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: eu-north-1
           function_name: meff_options_scraper
           zip_file: lambda_function.zip
+          args: --region eu-north-1
+
