@@ -1,6 +1,8 @@
 name: Deploy to AWS Lambda
 
 on:
+  push:
+    branches: [ main ] 
   pull_request:
     branches: [ main ]
 
