@@ -19,17 +19,32 @@ jobs:
 
       - name: Install minimal dependencies and zip
         run: |
-          pip install boto3 selenium pandas numpy scipy -t python/
+          # Install only the necessary dependencies to the 'python/' directory
+          pip install --no-cache-dir selenium pandas numpy scipy boto3 -t python/
+
+          # Remove unnecessary files like bytecode and dist-info to reduce size
           find python/ -type d -name "__pycache__" -exec rm -rf {} +
-          find python/ -type d -name "tests" -exec rm -rf {} +
           find python/ -type d -name "*.dist-info" -exec rm -rf {} +
+
+          # Create the deployment package directory
           mkdir -p package
+
+          # Copy your Python script and the db folder into the package directory
           cp lambda/scraping_and_iv.py package/
           cp -r db package/
+
+          # Copy the necessary files from 'python/' (dependencies)
           cp -r python/* package/
+
+          # Navigate to the package directory
           cd package
+
+          # Zip the package
           zip -r ../lambda_function.zip .
+
+          # Go back to the root directory
           cd ..
+
 
       - name: Upload to S3
         run: |
