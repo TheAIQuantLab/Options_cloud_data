@@ -2,7 +2,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-import pandas as pd
+from pandas import DataFrame, to_datetime
 import time
 from numpy import sqrt, log, exp, nan
 from scipy.stats import norm
@@ -33,8 +33,8 @@ def parse_tipo(tipo):
     }
 
 def calculate_T(expiration_date, today_str):
-    today = pd.to_datetime(today_str, format="%d-%m-%Y")
-    expiration = pd.to_datetime(expiration_date, format="%d-%m-%Y")
+    today = to_datetime(today_str, format="%d-%m-%Y")
+    expiration = to_datetime(expiration_date, format="%d-%m-%Y")
     return (expiration - today).days / 365.0
 
 def black_scholes_price(S, K, T, r, sigma, option_type="call"):
@@ -98,7 +98,7 @@ def scrape_meff_data():
 
     driver.quit()
 
-    df = pd.DataFrame(data, columns=[
+    df = DataFrame(data, columns=[
         "execution_date", "price_today", "type_CP", "type_EA", "expiration_date",
         "strike_price", "colCompra1", "colCompra2", "colCompra3",
         "colVenta1", "colVenta2", "colVenta3",
