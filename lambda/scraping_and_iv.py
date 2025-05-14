@@ -1,4 +1,5 @@
 # meff options scraper
+from secret import ACCESS_KEY, SECRET_KEY
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -7,6 +8,8 @@ import time
 import numpy as np
 from scipy.stats import norm
 from scipy.optimize import brentq
+import boto3
+from io import StringIO
 
 def setup_driver():
     options = Options()
@@ -105,8 +108,33 @@ def scrape_meff_data():
         "colUltimo", "colVar", "x1", "x2", "x3"
     ])
 
+    # generate id field = expiration_date + type_CP + type_EA + strike_price
+    df["id"] = df.apply(
+        lambda row: f"{row['expiration_date']}_{row['type_CP']}_{row['type_EA']}_{row['strike_price']}",
+        axis=1
+    )
+
     return df
+
+def save_df_to_dynamodb(df, table):
+    for _, row in df.iterrows():
+        item = {col: str(row[col]) for col in df.columns}  # Convert all to str for DynamoDB
+        try:
+            table.put_item(Item=item)
+        except Exception as e:
+            print(f"Failed to insert row: {row.to_dict()}, Error: {str(e)}")
 
 if __name__ == "__main__":
     df = scrape_meff_data()
     print(df)
+
+    dynamodb = boto3.resource(
+        'dynamodb',
+        region_name = 'eu-north-1',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY
+    )
+    table = dynamodb.Table('meff_options')
+
+    save_df_to_dynamodb(df, table)
+    print("Data saved to DynamoDB")
