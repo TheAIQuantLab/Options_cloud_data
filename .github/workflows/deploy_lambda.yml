@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt -t python
-          cp -r scraping_and_iv.py db python/
+          cp -r ./lambda/scraping_and_iv.py db python/
           cd python && zip -r ../lambda_function.zip .
 
       - name: Deploy to Lambda
