@@ -1,5 +1,4 @@
 # meff options scraper
-from secret import ACCESS_KEY, SECRET_KEY
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -10,6 +9,10 @@ from scipy.stats import norm
 from scipy.optimize import brentq
 import boto3
 from io import StringIO
+import os
+
+ACCESS_KEY = os.environ['ACCESS_KEY']
+SECRET_KEY = os.environ['SECRET_KEY']
 
 def setup_driver(): 
     options = Options()
