@@ -17,18 +17,34 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install minimal dependencies and zip
         run: |
-          pip install boto3 selenium pandas numpy scipy -t python/ --platform manylinux2014_x86_64 --target python --only-binary=:all:
-          cp -r ./lambda/scraping_and_iv.py db python/
-          cd python && zip -r ../lambda_function.zip .
+          pip install boto3 selenium pandas numpy scipy -t python/
+          find python/ -type d -name "__pycache__" -exec rm -rf {} +
+          find python/ -type d -name "tests" -exec rm -rf {} +
+          find python/ -type d -name "*.dist-info" -exec rm -rf {} +
+          mkdir -p package
+          cp lambda/scraping_and_iv.py package/
+          cp -r db package/
+          cp -r python/* package/
+          cd package
+          zip -r ../lambda_function.zip .
+          cd ..
 
-      - name: Deploy to Lambda
-        uses: appleboy/lambda-action@v0.1.5
+      - name: Upload to S3
+        run: |
+          aws s3 cp lambda_function.zip s3://lambda-deploy-miax-practica-cloud/lambda_function.zip \
+            --region eu-north-1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Deploy Lambda using S3
+        uses: appleboy/lambda-action@master
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: eu-north-1
           function_name: meff_options_scraper
-          zip_file: lambda_function.zip
-
+          s3_bucket: your-s3-bucket-name
+          s3_key: lambda_function.zip
