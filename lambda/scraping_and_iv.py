@@ -11,7 +11,7 @@ from scipy.optimize import brentq
 import boto3
 from io import StringIO
 
-def setup_driver():
+def setup_driver(): 
     options = Options()
     options.add_argument("--headless")
     return webdriver.Chrome(options=options)
