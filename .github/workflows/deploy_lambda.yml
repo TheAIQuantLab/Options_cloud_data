@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install time boto3 selenium pandas numpy scipy -t python/ --platform manylinux2014_x86_64 --target python --only-binary=:all:
+          pip install boto3 selenium pandas numpy scipy -t python/ --platform manylinux2014_x86_64 --target python --only-binary=:all:
           cp -r ./lambda/scraping_and_iv.py db python/
           cd python && zip -r ../lambda_function.zip .
 
