@@ -19,10 +19,11 @@ jobs:
 
       - name: Install minimal dependencies and zip
         run: |
-          pip install boto3 selenium pandas numpy scipy -t python/
+          pip install requests beautifulsoup4 pandas scipy -t python/
           find python/ -type d -name "__pycache__" -exec rm -rf {} +
-          find python/ -type d -name "tests" -exec rm -rf {} +
           find python/ -type d -name "*.dist-info" -exec rm -rf {} +
+          find python/ -type d -name "*.egg-info" -exec rm -rf {} +
+          find python/ -type f -name "*.pyc" -delete
           mkdir -p package
           cp lambda/scraping_and_iv.py package/
           cp -r db package/

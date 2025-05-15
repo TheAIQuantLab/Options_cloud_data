@@ -1,20 +1,15 @@
-# meff options scraper
-from secret import ACCESS_KEY, SECRET_KEY
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
 import time
-import numpy as np
+import math
 from scipy.stats import norm
 from scipy.optimize import brentq
 import boto3
-from io import StringIO
+import os
 
-def setup_driver(): 
-    options = Options()
-    options.add_argument("--headless")
-    return webdriver.Chrome(options=options)
+ACCESS_KEY = os.environ['ACCESS_KEY']
+SECRET_KEY = os.environ['SECRET_KEY']
 
 def parse_tipo(tipo):
     if len(tipo) != 11 or not tipo.startswith("O"):
@@ -37,63 +32,73 @@ def calculate_T(expiration_date, today_str):
 def black_scholes_price(S, K, T, r, sigma, option_type="call"):
     if T <= 0 or sigma <= 0:
         return 0.0
-    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
+    d2 = d1 - sigma * math.sqrt(T)
     if option_type == "call":
-        return S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+        return S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
     elif option_type == "put":
-        return K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+        return K * math.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
 def implied_volatility(S, K, T, r, market_price, option_type="call"):
     if T == 0 or market_price == 0:
         print("Invalid parameters for IV calculation")
-        return np.nan
+        return float('nan')
     try:
         return brentq(
-            lambda sigma: black_scholes_price(S, K, T, r, sigma, option_type) - market_price, 0, 10 
-            )
+            lambda sigma: black_scholes_price(S, K, T, r, sigma, option_type) - market_price, 0, 10
+        )
     except ValueError:
         print("No solution found for IV")
-        return np.nan
+        return float('nan')
 
 def scrape_meff_data():
-    driver = setup_driver()
-    driver.get("https://www.meff.es/esp/Derivados-Financieros/Ficha/FIEM_MiniIbex_35")
-    time.sleep(3)
- 
-    table = driver.find_element(By.ID, "tblOpciones")
-    table_prices = driver.find_element(By.ID, "Contenido_Contenido_tblFuturos")
-    rows = table.find_elements(By.TAG_NAME, "tr")
-    row_todays_price = table_prices.find_elements(By.TAG_NAME, "tr")[2]
-    price_today = row_todays_price.find_elements(By.TAG_NAME, "td")[13].get_attribute("textContent").strip()
+    url = "https://www.meff.es/esp/Derivados-Financieros/Ficha/FIEM_MiniIbex_35"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.content, "html.parser")
 
+    PRICE_COL_INDEX = 13
+    STRIKE_COL_INDEX = 5
+    LAST_OPTION_PRICE_INDEX = 17
+
+    # Get and parse today's price
+    table_prices = soup.find(id="Contenido_Contenido_tblFuturos")
+    row_todays_price = table_prices.find_all("tr")[2]
+    price_today_str = row_todays_price.find_all("td")[PRICE_COL_INDEX].get_text(strip=True)
+    S = float(price_today_str.replace(".", "").replace(",", "."))
+
+    table = soup.find(id="tblOpciones")
+    rows = table.find_all("tr")
     date_today = time.strftime("%d-%m-%Y")
+
     data = []
 
     for row in rows:
-        tipo = row.get_attribute("data-tipo")
-        if tipo:
-            parsed = parse_tipo(tipo)
-            cols = [date_today, price_today, parsed["type_CP"], parsed["type_EA"], parsed["expiration_date"]]
-            cols.extend(col.get_attribute("textContent").strip() for col in row.find_elements(By.TAG_NAME, "td"))
-            if cols[0]:
-                T = calculate_T(parsed["expiration_date"], date_today)
-                try:
-                    K = float(cols[5].replace(".", "").replace(",", "."))  # strike
-                    S = float(price_today.replace(".", "").replace(",", "."))
-                    option_price = float(cols[17].replace(".", "").replace(",", "."))
-                    option_type = "call" if parsed["type_CP"].lower() == "call" else "put"
-                    r = 0.03  # risk-free rate, adjust as needed
-                    print(f"Calculating IV for K={K}, S={S}, T={T}, r={r}, option_price={option_price}, option_type={option_type}")
-                    iv = implied_volatility(S, K, T, r, option_price, option_type)
-                    print(f"IV: {iv}")
-                except Exception:
-                    iv = np.nan
-                cols.append(T)
-                cols.append(iv)
-                data.append(cols)
+        tipo = row.get("data-tipo")
+        if not tipo:
+            continue
 
-    driver.quit()
+        parsed = parse_tipo(tipo)
+        tds = row.find_all("td")
+        cols = [date_today, price_today_str, parsed["type_CP"], parsed["type_EA"], parsed["expiration_date"]]
+        cols.extend(td.get_text(strip=True) for td in tds)
+
+        if cols[0]:
+            try:
+                print('-----------------')
+                T = calculate_T(parsed["expiration_date"], date_today)
+                K = float(cols[STRIKE_COL_INDEX].replace(".", "").replace(",", "."))
+                option_price = float(cols[LAST_OPTION_PRICE_INDEX].replace(".", "").replace(",", "."))
+                option_type = "call" if parsed["type_CP"].lower() == "call" else "put"
+                print(f"Calculating IV for K: {K}, T: {T}, option_price: {option_price}, type: {option_type}")
+                iv = implied_volatility(S, K, T, 0.03, option_price, option_type)
+                print(f"IV: {iv}")
+            except (ValueError, IndexError):
+                iv = float('nan')
+
+            cols.append(T)
+            cols.append(iv)
+            data.append(cols)
 
     df = pd.DataFrame(data, columns=[
         "execution_date", "price_today", "type_CP", "type_EA", "expiration_date",
@@ -102,37 +107,55 @@ def scrape_meff_data():
         "colUltimo", "colVar", "x1", "x2", "x3", "last_option_price", "T", "IV"
     ])
 
-    df = df.drop(columns=[
+    df.drop(columns=[
         "colCompra1", "colCompra2", "colCompra3",
         "colVenta1", "colVenta2", "colVenta3",
         "colUltimo", "colVar", "x1", "x2", "x3"
-    ])
+    ], inplace=True)
 
-    # generate id field = expiration_date + type_CP + type_EA + strike_price
-    df["id"] = df.apply(
-        lambda row: f"{row['expiration_date']}_{row['type_CP']}_{row['type_EA']}_{row['strike_price']}",
-        axis=1
+    df["id"] = (
+        df["execution_date"] + "_" +
+        df["expiration_date"] + "_" +
+        df["type_CP"] + "_" +
+        df["type_EA"] + "_" +
+        df["strike_price"]
     )
 
     return df
 
 def save_df_to_dynamodb(df, table):
     for _, row in df.iterrows():
-        item = {col: str(row[col]) for col in df.columns}  # Convert all to str for DynamoDB
+        item = {col: str(row[col]) for col in df.columns}
         try:
             table.put_item(Item=item)
         except Exception as e:
             print(f"Failed to insert row: {row.to_dict()}, Error: {str(e)}")
 
-if __name__ == "__main__":
+def lambda_handler(event, context):
     df = scrape_meff_data()
-    print(df)
 
     dynamodb = boto3.resource(
         'dynamodb',
-        region_name = 'eu-north-1',
-        aws_access_key_id = ACCESS_KEY,
-        aws_secret_access_key = SECRET_KEY
+        region_name='eu-north-1',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+    table = dynamodb.Table('meff_options')
+
+    save_df_to_dynamodb(df, table)
+    return {
+        'statusCode': 200,
+        'body': f'{len(df)} items saved to DynamoDB'
+    }
+
+if __name__ == "__main__":
+    df = scrape_meff_data()
+
+    dynamodb = boto3.resource(
+        'dynamodb',
+        region_name='eu-north-1',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
     )
     table = dynamodb.Table('meff_options')
 
