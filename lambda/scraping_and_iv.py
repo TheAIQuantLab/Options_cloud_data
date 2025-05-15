@@ -127,6 +127,23 @@ def save_df_to_dynamodb(df, table):
         except Exception as e:
             print(f"Failed to insert row: {row.to_dict()}, Error: {str(e)}")
 
+def lambda_handler(event, context):
+    df = scrape_meff_data()
+
+    dynamodb = boto3.resource(
+        'dynamodb',
+        region_name='eu-north-1',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+    table = dynamodb.Table('meff_options')
+
+    save_df_to_dynamodb(df, table)
+    return {
+        'statusCode': 200,
+        'body': f'{len(df)} items saved to DynamoDB'
+    }
+
 if __name__ == "__main__":
     df = scrape_meff_data()
     print(df)
