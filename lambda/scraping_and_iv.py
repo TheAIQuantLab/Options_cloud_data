@@ -7,6 +7,7 @@ from scipy.stats import norm
 from scipy.optimize import brentq
 import boto3
 import os
+import lxml
 
 ACCESS_KEY = os.environ['ACCESS_KEY']
 SECRET_KEY = os.environ['SECRET_KEY']
@@ -53,46 +54,52 @@ def implied_volatility(S, K, T, r, market_price, option_type="call"):
 
 def scrape_meff_data():
     url = "https://www.meff.es/esp/Derivados-Financieros/Ficha/FIEM_MiniIbex_35"
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.content, "html.parser")
+    soup = BeautifulSoup(response.content, "lxml")
 
-    # Extract today's price
+    PRICE_COL_INDEX = 13
+    STRIKE_COL_INDEX = 5
+    LAST_OPTION_PRICE_INDEX = 17
+
+    # Get and parse today's price
     table_prices = soup.find(id="Contenido_Contenido_tblFuturos")
     row_todays_price = table_prices.find_all("tr")[2]
-    price_today = row_todays_price.find_all("td")[13].get_text(strip=True)
+    price_today_str = row_todays_price.find_all("td")[PRICE_COL_INDEX].get_text(strip=True)
+    S = float(price_today_str.replace(".", "").replace(",", "."))
 
-    # Extract options table
     table = soup.find(id="tblOpciones")
     rows = table.find_all("tr")
-
     date_today = time.strftime("%d-%m-%Y")
+
     data = []
 
     for row in rows:
         tipo = row.get("data-tipo")
-        if tipo:
-            parsed = parse_tipo(tipo)
-            cols = [date_today, price_today, parsed["type_CP"], parsed["type_EA"], parsed["expiration_date"]]
-            cols.extend(col.get_text(strip=True) for col in row.find_all("td"))
-            if cols[0]:
+        if not tipo:
+            continue
+
+        parsed = parse_tipo(tipo)
+        tds = row.find_all("td")
+        cols = [date_today, price_today_str, parsed["type_CP"], parsed["type_EA"], parsed["expiration_date"]]
+        cols.extend(td.get_text(strip=True) for td in tds)
+
+        if cols[0]:
+            try:
+                print('-----------------')
                 T = calculate_T(parsed["expiration_date"], date_today)
-                try:
-                    K = float(cols[5].replace(".", "").replace(",", "."))
-                    S = float(price_today.replace(".", "").replace(",", "."))
-                    option_price = float(cols[17].replace(".", "").replace(",", "."))
-                    option_type = "call" if parsed["type_CP"].lower() == "call" else "put"
-                    r = 0.03
-                    print(f"Calculating IV for K={K}, S={S}, T={T}, r={r}, option_price={option_price}, option_type={option_type}")
-                    iv = implied_volatility(S, K, T, r, option_price, option_type)
-                    print(f"IV: {iv}")
-                except Exception:
-                    iv = float('nan')
-                cols.append(T)
-                cols.append(iv)
-                data.append(cols)
+                K = float(cols[STRIKE_COL_INDEX].replace(".", "").replace(",", "."))
+                option_price = float(cols[LAST_OPTION_PRICE_INDEX].replace(".", "").replace(",", "."))
+                option_type = "call" if parsed["type_CP"].lower() == "call" else "put"
+                print(f"Calculating IV for K: {K}, T: {T}, option_price: {option_price}, type: {option_type}")
+                iv = implied_volatility(S, K, T, 0.03, option_price, option_type)
+                print(f"IV: {iv}")
+            except (ValueError, IndexError):
+                iv = float('nan')
+
+            cols.append(T)
+            cols.append(iv)
+            data.append(cols)
 
     df = pd.DataFrame(data, columns=[
         "execution_date", "price_today", "type_CP", "type_EA", "expiration_date",
@@ -101,15 +108,18 @@ def scrape_meff_data():
         "colUltimo", "colVar", "x1", "x2", "x3", "last_option_price", "T", "IV"
     ])
 
-    df = df.drop(columns=[
+    df.drop(columns=[
         "colCompra1", "colCompra2", "colCompra3",
         "colVenta1", "colVenta2", "colVenta3",
         "colUltimo", "colVar", "x1", "x2", "x3"
-    ])
+    ], inplace=True)
 
-    df["id"] = df.apply(
-        lambda row: f"{row['execution_date']}_{row['expiration_date']}_{row['type_CP']}_{row['type_EA']}_{row['strike_price']}",
-        axis=1
+    df["id"] = (
+        df["execution_date"] + "_" +
+        df["expiration_date"] + "_" +
+        df["type_CP"] + "_" +
+        df["type_EA"] + "_" +
+        df["strike_price"]
     )
 
     return df
@@ -141,7 +151,6 @@ def lambda_handler(event, context):
 
 if __name__ == "__main__":
     df = scrape_meff_data()
-    print(df)
 
     dynamodb = boto3.resource(
         'dynamodb',
