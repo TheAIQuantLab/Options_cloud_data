@@ -19,7 +19,7 @@ jobs:
 
       - name: Install minimal dependencies and zip
         run: |
-          pip install boto3 selenium pandas math scipy -t python/
+          pip install boto3 selenium pandas scipy -t python/
           find python/ -type d -name "__pycache__" -exec rm -rf {} +
           find python/ -type d -name "tests" -exec rm -rf {} +
           find python/ -type d -name "*.dist-info" -exec rm -rf {} +
