@@ -7,7 +7,6 @@ from scipy.stats import norm
 from scipy.optimize import brentq
 import boto3
 import os
-import lxml
 
 ACCESS_KEY = os.environ['ACCESS_KEY']
 SECRET_KEY = os.environ['SECRET_KEY']
@@ -56,7 +55,7 @@ def scrape_meff_data():
     url = "https://www.meff.es/esp/Derivados-Financieros/Ficha/FIEM_MiniIbex_35"
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.content, "lxml")
+    soup = BeautifulSoup(response.content, "html.parser")
 
     PRICE_COL_INDEX = 13
     STRIKE_COL_INDEX = 5
