@@ -108,7 +108,7 @@ def scrape_meff_data():
     ])
 
     df["id"] = df.apply(
-        lambda row: f"{row['expiration_date']}_{row['type_CP']}_{row['type_EA']}_{row['strike_price']}",
+        lambda row: f"{row['execution_date']}_{row['expiration_date']}_{row['type_CP']}_{row['type_EA']}_{row['strike_price']}",
         axis=1
     )
 
