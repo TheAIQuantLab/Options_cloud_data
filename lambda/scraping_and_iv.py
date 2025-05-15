@@ -2,9 +2,9 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from pandas import DataFrame, to_datetime
+import pandas as pd
 import time
-from numpy import sqrt, log, exp, nan
+import math  # Replace numpy with math
 from scipy.stats import norm
 from scipy.optimize import brentq
 import boto3
@@ -33,31 +33,31 @@ def parse_tipo(tipo):
     }
 
 def calculate_T(expiration_date, today_str):
-    today = to_datetime(today_str, format="%d-%m-%Y")
-    expiration = to_datetime(expiration_date, format="%d-%m-%Y")
+    today = pd.to_datetime(today_str, format="%d-%m-%Y")
+    expiration = pd.to_datetime(expiration_date, format="%d-%m-%Y")
     return (expiration - today).days / 365.0
 
 def black_scholes_price(S, K, T, r, sigma, option_type="call"):
     if T <= 0 or sigma <= 0:
         return 0.0
-    d1 = (log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * sqrt(T))
-    d2 = d1 - sigma * sqrt(T)
+    d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
+    d2 = d1 - sigma * math.sqrt(T)
     if option_type == "call":
-        return S * norm.cdf(d1) - K * exp(-r * T) * norm.cdf(d2)
+        return S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
     elif option_type == "put":
-        return K * exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+        return K * math.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
 def implied_volatility(S, K, T, r, market_price, option_type="call"):
     if T == 0 or market_price == 0:
         print("Invalid parameters for IV calculation")
-        return nan
+        return float('nan')  # Replace numpy.nan with Python's float('nan')
     try:
         return brentq(
             lambda sigma: black_scholes_price(S, K, T, r, sigma, option_type) - market_price, 0, 10 
             )
     except ValueError:
         print("No solution found for IV")
-        return nan
+        return float('nan')  # Replace numpy.nan with Python's float('nan')
 
 def scrape_meff_data():
     driver = setup_driver()
@@ -91,21 +91,21 @@ def scrape_meff_data():
                     iv = implied_volatility(S, K, T, r, option_price, option_type)
                     print(f"IV: {iv}")
                 except Exception:
-                    iv = nan
+                    iv = float('nan')  # Replace numpy.nan with Python's float('nan')
                 cols.append(T)
                 cols.append(iv)
                 data.append(cols)
 
     driver.quit()
 
-    df = DataFrame(data, columns=[
+    df = pd.DataFrame(data, columns=[ 
         "execution_date", "price_today", "type_CP", "type_EA", "expiration_date",
         "strike_price", "colCompra1", "colCompra2", "colCompra3",
         "colVenta1", "colVenta2", "colVenta3",
         "colUltimo", "colVar", "x1", "x2", "x3", "last_option_price", "T", "IV"
     ])
 
-    df = df.drop(columns=[
+    df = df.drop(columns=[ 
         "colCompra1", "colCompra2", "colCompra3",
         "colVenta1", "colVenta2", "colVenta3",
         "colUltimo", "colVar", "x1", "x2", "x3"
@@ -133,9 +133,9 @@ if __name__ == "__main__":
 
     dynamodb = boto3.resource(
         'dynamodb',
-        region_name = 'eu-north-1',
-        aws_access_key_id = ACCESS_KEY,
-        aws_secret_access_key = SECRET_KEY
+        region_name='eu-north-1',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
     )
     table = dynamodb.Table('meff_options')
 
