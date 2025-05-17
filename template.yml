@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FastAPI app deployed to AWS Lambda using AWS SAM
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: python3.11
+    MemorySize: 256
+    Architectures:
+      - x86_64
+
+Resources:
+  FastApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: practica_cloud_api
+      Handler: api.api.handler  # This matches where Mangum is used
+      CodeUri: .
+      Environment:
+        Variables:
+          ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REGION: ${{ secrets.AWS_REGION }}
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+Outputs:
+  FastApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
