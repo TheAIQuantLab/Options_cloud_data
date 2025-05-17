@@ -1,8 +1,8 @@
 name: Deploy FastAPI to AWS Lambda
 
 on:
-  push:
-    branches:
+  pull_request:
+      branches:
       - main  # or your deployment branch
 
 permissions:
