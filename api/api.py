@@ -1,48 +1,68 @@
 from fastapi import FastAPI, Query
-from typing import List, Optional
+from typing import Optional, List
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
 import os
+from decimal import Decimal
+from mangum import Mangum
 
-app = FastAPI()
+# Initialize FastAPI
+app = FastAPI(title="Options Data API")
+handler = Mangum(app)
 
-ACCESS_KEY = os.environ['ACCESS_KEY']
-SECRET_KEY = os.environ['SECRET_KEY']
+# AWS credentials (use environment variables for security in production)
+AWS_REGION = 'eu-north-1'
+AWS_ACCESS_KEY = os.environ['ACCESS_KEY']
+AWS_SECRET_KEY = os.environ['SECRET_KEY']
+TABLE_NAME = 'meff_options'
 
-# DynamoDB config
+# Initialize DynamoDB client
 dynamodb = boto3.resource(
     'dynamodb',
-    region_name='eu-north-1',
-    aws_access_key_id=ACCESS_KEY
-    aws_secret_access_key=SECRET_KEY
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_KEY
 )
 
-TABLE_NAME = 'options_data'
 table = dynamodb.Table(TABLE_NAME)
 
-@app.get("/execution-days")
+print(dynamodb.tables.all())
+
+@app.get("/execution-days", response_model=List[str])
 def get_execution_days():
     """
-    Return all unique execution dates in the table.
+    Returns a sorted list of unique execution dates from the table.
     """
     response = table.scan(ProjectionExpression="execution_date")
-    dates = {item['execution_date'] for item in response.get("Items", [])}
-    return sorted(dates)
+    items = response.get("Items", [])
+    unique_dates = sorted({item["execution_date"] for item in items})
+    return unique_dates
+
+@app.get("/expiration_dates", response_model=List[str])
+def get_expiration_dates(execution_date: str = Query(..., description="Execution date to filter")):
+    """
+    Returns a sorted list of unique expiration dates from the table.
+    """
+    filter_expr = Attr("execution_date").eq(execution_date)
+    response = table.scan(FilterExpression=filter_expr, ProjectionExpression="expiration_date")
+    items = response.get("Items", [])
+    unique_dates = sorted({item["expiration_date"] for item in items})
+    return unique_dates
 
 @app.get("/ivs")
 def get_ivs(
-    execution_date: str = Query(...),
-    type_cp: Optional[str] = Query(None),
-    T: Optional[float] = Query(None)
+    execution_date: str = Query(..., description="Execution date to filter"),
+    type_cp: Optional[str] = Query(None, description="Type CP to filter"),
+    expiration_date: Optional[str] = Query(None, description="expiration_date to filter")
 ):
     """
-    Get IVs filtered by execution_date, type_CP, and T (optional).
+    Returns filtered IVs based on execution_date, and optionally by type_CP and T.
     """
     filter_expr = Attr("execution_date").eq(execution_date)
     if type_cp:
-        filter_expr &= Attr("type_CP").eq(type_cp)
-    if T is not None:
-        filter_expr &= Attr("T").eq(T)
+        filter_expr = filter_expr & Attr("type_CP").eq(type_cp)
+    if expiration_date:
+        filter_expr = filter_expr & Attr("expiration_date").eq(expiration_date)
 
     response = table.scan(FilterExpression=filter_expr)
     items = response.get("Items", [])
@@ -51,7 +71,9 @@ def get_ivs(
         {
             "id": item["id"],
             "execution_date": item["execution_date"],
+            "expiration_date": item["expiration_date"],
             "type_CP": item["type_CP"],
+            "strike_price": item["strike_price"],
             "T": item["T"],
             "IV": item["IV"]
         }

@@ -1,4 +1,5 @@
 /research.ipynb
 /.venv
 /lambda/secret.py
-/lambda/__pycache__/
+/*/__pycache__/
+/api/test_api.py
