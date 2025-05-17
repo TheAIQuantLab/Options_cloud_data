@@ -35,6 +35,7 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Build with SAM
+      run: pwd
       run: sam build
 
     - name: Deploy with SAM
