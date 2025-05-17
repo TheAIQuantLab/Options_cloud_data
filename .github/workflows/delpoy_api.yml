@@ -34,8 +34,10 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Build with SAM
+    - name: Print working directory
       run: pwd
+
+    - name: Build with SAM
       run: sam build
 
     - name: Deploy with SAM
