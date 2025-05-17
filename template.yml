@@ -15,7 +15,7 @@ Resources:
   FastApiFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: practica_cloud_api
+      FunctionName: practica-cloud-api-dhp-116353
       Handler: api.api.handler  # This matches where Mangum is used
       CodeUri: .
       Environment:
