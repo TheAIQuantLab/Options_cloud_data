@@ -207,3 +207,4 @@ if __name__ == "__main__":
 
     save_df_to_dynamodb(df, table)
     print("Data saved to DynamoDB")
+    
