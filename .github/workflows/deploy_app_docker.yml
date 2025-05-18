@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 env:
-  AWS_REGION: your_aws_region
+  AWS_REGION: eu-north-1
   ECR_REPOSITORY: 479161062380.dkr.ecr.eu-north-1.amazonaws.com/docker_iv_app
   APP_RUNNER_SERVICE_NAME: docker_iv_app 
 
@@ -44,5 +44,6 @@ jobs:
       - name: Deploy to AWS App Runner using AWS CLI
         run: |
           aws apprunner update-service \
+            --region eu-west-1 \
             --service-arn arn:aws:apprunner:eu-west-1:479161062380:service/docker_iv_servide/06d12c73922d43b2bcfc614cf1eacc21 \
             --source-configuration "ImageRepository={ImageIdentifier='${{ env.ECR_REPOSITORY }}:latest',ImageRepositoryType='ECR',ImageConfiguration={Port='8080'}}"
