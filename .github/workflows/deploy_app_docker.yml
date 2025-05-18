@@ -7,7 +7,7 @@ on:
 env:
   AWS_REGION: your_aws_region
   ECR_REPOSITORY: 479161062380.dkr.ecr.eu-north-1.amazonaws.com/docker_iv_app
-  APP_RUNNER_SERVICE_NAME: docker_iv_app # The name you gave your App Runner service
+  APP_RUNNER_SERVICE_NAME: docker_iv_app 
 
 permissions:
   id-token: write
@@ -39,7 +39,7 @@ jobs:
           cd app
           docker build -t $ECR_REPOSITORY .
           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push ${{ env.ECR_REPOSITORY }}:latest
 
       - name: Deploy to AWS App Runner using AWS CLI
         run: |
