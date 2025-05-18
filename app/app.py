@@ -3,12 +3,14 @@ import plotly.graph_objects as go
 import pandas as pd
 import requests
 
+# 479161062380.dkr.ecr.eu-north-1.amazonaws.com/miax_cloud_options_iv
 AWS_URL = "https://ry3t10t5l2.execute-api.eu-north-1.amazonaws.com/Prod"
 
 # --- Replace with your API base URL ---
 API_BASE_URL = AWS_URL
 
 app = Dash(__name__)
+server = app.server  # This is required for AWS webapp deployment
 
 app.layout = html.Div([
     html.H1("Opciones: Volatilidad Implícita vs. Precio de Ejercicio"),
@@ -114,6 +116,12 @@ def update_iv_graph(selected_execution_date, selected_expiration_date, selected_
             )
             df['IV'] = df['IV'].astype(float)
             df['T'] = df['T'].astype(float)
+
+            # only plot if iv > 1e-4
+            df = df[df['IV'] > 1e-4]
+
+            # order by strike price
+            df = df.sort_values(by='strike_price')
 
             if not df.empty:
                 fig = go.Figure(
