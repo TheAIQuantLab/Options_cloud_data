@@ -25,7 +25,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: ${{ secrets.AWS_REGION }}
-          role-to-assume: arn:aws:iam::479161062380:role/AppRunnerECRAccessRole
+          role-to-assume: arn:aws:iam::479161062380:role/github_apprunner_permissions
 
       - name: Login to Amazon ECR
         id: login-ecr
