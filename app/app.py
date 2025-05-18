@@ -10,7 +10,7 @@ AWS_URL = "https://ry3t10t5l2.execute-api.eu-north-1.amazonaws.com/Prod"
 API_BASE_URL = AWS_URL
 
 app = Dash(__name__)
-server = app.server # This is required for AWS webapp deployment
+server = app.server  # This is required for AWS webapp deployment
 
 app.layout = html.Div([
     html.H1("Opciones: Volatilidad Implícita vs. Precio de Ejercicio"),
