@@ -41,7 +41,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Update AWS App Runner service
-        uses: aws-actions/aws-apprunner-deploy@latest
+        uses: aws-actions/apprunner-deploy@latest
         with:
           service: docker_iv_servide
           image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
