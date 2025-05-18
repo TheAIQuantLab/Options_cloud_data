@@ -42,7 +42,7 @@ jobs:
           docker push ${{ env.ECR_REPOSITORY }}:latest
 
       - name: Deploy to AWS App Runner using AWS CLI
-        run: |
-          aws apprunner update-service \
-            --service-arn arn:aws:apprunner:eu-west-1:479161062380:service/docker_iv_servide/06d12c73922d43b2bcfc614cf1eacc21 \
-            --source-configuration ImageRepository={ImageIdentifier=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest,ImageRepositoryType=ECR}
+              run: |
+                aws apprunner update-service \
+                  --service-arn arn:aws:apprunner:eu-west-1:479161062380:service/docker_iv_servide/06d12c73922d43b2bcfc614cf1eacc21 \
+                  --source-configuration "ImageRepository={ImageIdentifier='${{ env.ECR_REPOSITORY }}:latest',ImageRepositoryType='ECR',ImageConfiguration={Port='8080'}}"
