@@ -1,0 +1,9 @@
+FROM python:3.11-slim-buster
+
+WORKDIR /app
+
+RUN pip install dash plotly pandas requests gunicorn
+
+COPY . .
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:server"]
