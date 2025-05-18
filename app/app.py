@@ -64,6 +64,7 @@ def update_execution_dates(search_value):
         print(f"Error fetching execution days: {e}")
         return []
 
+
 @app.callback(
     Output('expiration-date-dropdown', 'options'),
     Input('execution-date-dropdown', 'value'),
@@ -82,6 +83,7 @@ def update_expiration_dates(selected_execution_date, search_value):
             print(f"Error fetching expiration dates: {e}")
             return []
     return []
+
 
 @app.callback(
     Output('iv-strike-graph', 'figure'),
@@ -142,6 +144,7 @@ def update_iv_graph(selected_execution_date, selected_expiration_date, selected_
                 'yaxis': {'title': 'Volatilidad Implícita (IV)'}
             }
         }
+
 
 if __name__ == '__main__':
     app.run(debug=True)
