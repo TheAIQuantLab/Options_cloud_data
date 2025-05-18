@@ -1,7 +1,7 @@
 name: Deploy web scraping and iv calculation to AWS Lambda
 
 on:
-  pull_request:
+  merge:
     branches: [ main ]
 
 jobs:

@@ -1,7 +1,7 @@
 name: Deploy FastAPI to AWS Lambda
 
 on:
-  pull_request:
+  merge:
       branches:
       - main  # or your deployment branch
 
