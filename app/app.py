@@ -42,7 +42,7 @@ app.layout = html.Div([
                 {'label': 'CALL', 'value': 'Call'},
                 {'label': 'PUT', 'value': 'Put'}
             ],
-            value=None,
+            value='Call',
             inline=True
         ),
     ], style={'padding': '10px'}),
