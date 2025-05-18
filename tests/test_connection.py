@@ -1,6 +1,7 @@
 # test_connection.py
 import requests
 
+
 def test_meff_connection():
     url = "https://www.meff.es/esp/Derivados-Financieros/Ficha/FIEM_MiniIbex_35"
     response = requests.get(url)

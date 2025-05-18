@@ -49,7 +49,9 @@ def implied_volatility(S, K, T, r, market_price, option_type="call"):
         return float('nan')
     try:
         return brentq(
-            lambda sigma: black_scholes_price(S, K, T, r, sigma, option_type) - market_price, 0, 10
+            lambda sigma: black_scholes_price(S, K, T, r, sigma, option_type) - market_price,
+            0,
+            10
         )
     except ValueError:
         print("No solution found for IV")
@@ -85,7 +87,13 @@ def scrape_meff_data():
 
         parsed = parse_tipo(tipo)
         tds = row.find_all("td")
-        cols = [date_today, price_today_str, parsed["type_CP"], parsed["type_EA"], parsed["expiration_date"]]
+        cols = [
+            date_today,
+            price_today_str,
+            parsed["type_CP"],
+            parsed["type_EA"],
+            parsed["expiration_date"]
+        ]
         cols.extend(td.get_text(strip=True) for td in tds)
 
         if cols[0]:
@@ -105,18 +113,48 @@ def scrape_meff_data():
             cols.append(iv)
             data.append(cols)
 
-    df = pd.DataFrame(data, columns=[
-        "execution_date", "price_today", "type_CP", "type_EA", "expiration_date",
-        "strike_price", "colCompra1", "colCompra2", "colCompra3",
-        "colVenta1", "colVenta2", "colVenta3",
-        "colUltimo", "colVar", "x1", "x2", "x3", "last_option_price", "T", "IV"
-    ])
+    df = pd.DataFrame(
+        data,
+        columns=[
+            "execution_date",
+            "price_today",
+            "type_CP",
+            "type_EA",
+            "expiration_date",
+            "strike_price",
+            "colCompra1",
+            "colCompra2",
+            "colCompra3",
+            "colVenta1",
+            "colVenta2",
+            "colVenta3",
+            "colUltimo",
+            "colVar",
+            "x1",
+            "x2",
+            "x3",
+            "last_option_price",
+            "T",
+            "IV"
+        ]
+    )
 
-    df.drop(columns=[
-        "colCompra1", "colCompra2", "colCompra3",
-        "colVenta1", "colVenta2", "colVenta3",
-        "colUltimo", "colVar", "x1", "x2", "x3"
-    ], inplace=True)
+    df.drop(
+        columns=[
+            "colCompra1",
+            "colCompra2",
+            "colCompra3",
+            "colVenta1",
+            "colVenta2",
+            "colVenta3",
+            "colUltimo",
+            "colVar",
+            "x1",
+            "x2",
+            "x3"
+        ],
+        inplace=True
+    )
 
     df["id"] = (
         df["execution_date"] + "_" +

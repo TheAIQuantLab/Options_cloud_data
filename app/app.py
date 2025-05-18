@@ -73,11 +73,15 @@ def update_execution_dates(search_value):
 def update_expiration_dates(selected_execution_date, search_value):
     if selected_execution_date:
         try:
-            response = requests.get(f"{API_BASE_URL}/expiration_dates?execution_date={selected_execution_date}")
+            response = requests.get(
+                f"{API_BASE_URL}/expiration_dates?execution_date={selected_execution_date}"
+            )
             response.raise_for_status()
             expiration_dates = response.json()
             if search_value:
-                expiration_dates = [date for date in expiration_dates if search_value in date]
+                expiration_dates = [
+                    date for date in expiration_dates if search_value in date
+                ]
             return [{'label': date, 'value': date} for date in expiration_dates]
         except requests.exceptions.RequestException as e:
             print(f"Error fetching expiration dates: {e}")
@@ -104,14 +108,22 @@ def update_iv_graph(selected_execution_date, selected_expiration_date, selected_
             response.raise_for_status()
             data = response.json()
             df = pd.DataFrame(data)
-            df['strike_price'] = df['strike_price'].str.replace(".", "").str.replace(",", ".").astype(float)
+            df['strike_price'] = (
+                df['strike_price'].str.replace(".", "").str.replace(",", ".").astype(float)
+            )
             df['IV'] = df['IV'].astype(float)
             df['T'] = df['T'].astype(float)
 
             if not df.empty:
-                fig = go.Figure(data=[go.Scatter(x=df['strike_price'], y=df['IV'], mode='markers+lines')])
+                fig = go.Figure(
+                    data=[go.Scatter(x=df['strike_price'], y=df['IV'], mode='markers+lines')]
+                )
                 fig.update_layout(
-                    title=f'Volatilidad Implícita vs. Precio de Ejercicio<br>({selected_execution_date}, {selected_expiration_date}, {selected_option_type})',
+                    title=(
+                        f'Volatilidad Implícita vs. Precio de Ejercicio<br>'
+                        f'({selected_execution_date}, {selected_expiration_date}, '
+                        f'{selected_option_type})'
+                    ),
                     xaxis_title='Precio de Ejercicio (Strike)',
                     yaxis_title='Volatilidad Implícita (IV)'
                 )

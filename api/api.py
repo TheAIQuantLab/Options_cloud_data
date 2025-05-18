@@ -28,8 +28,10 @@ table = dynamodb.Table(TABLE_NAME)
 print(dynamodb.tables.all())
 
 
-@app.get("/execution-days",
-        response_model=List[str])
+@app.get(
+    "/execution-days",
+    response_model=List[str]
+)
 def get_execution_days():
     """
     Returns a sorted list of unique execution dates from the table.
@@ -41,14 +43,20 @@ def get_execution_days():
 
 
 @app.get("/expiration_dates", response_model=List[str])
-def get_expiration_dates(execution_date: str = Query(...,
-                         description="Execution date to filter")):
+def get_expiration_dates(
+    execution_date: str = Query(
+        ...,
+        description="Execution date to filter"
+    )
+):
     """
     Returns a sorted list of unique expiration dates from the table.
     """
     filter_expr = Attr("execution_date").eq(execution_date)
-    response = table.scan(  FilterExpression=filter_expr,
-                            ProjectionExpression="expiration_date")
+    response = table.scan(
+        FilterExpression=filter_expr,
+        ProjectionExpression="expiration_date"
+    )
     items = response.get("Items", [])
     unique_dates = sorted({item["expiration_date"] for item in items})
     return unique_dates
@@ -56,12 +64,18 @@ def get_expiration_dates(execution_date: str = Query(...,
 
 @app.get("/ivs")
 def get_ivs(
-    execution_date: str = Query(...,
-                                description="Execution date to filter"),
-    type_cp: Optional[str] = Query(None,
-                                    description="Type CP to filter"),
-    expiration_date: Optional[str] = Query(None,
-                                            description="expiration_date to filter")
+    execution_date: str = Query(
+        ...,
+        description="Execution date to filter"
+    ),
+    type_cp: Optional[str] = Query(
+        None,
+        description="Type CP to filter"
+    ),
+    expiration_date: Optional[str] = Query(
+        None,
+        description="expiration_date to filter"
+    )
 ):
     """
     Returns filtered IVs based on execution_date,
