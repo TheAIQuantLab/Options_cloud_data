@@ -48,6 +48,7 @@ app.layout = html.Div([
     dcc.Graph(id='iv-strike-graph')
 ])
 
+
 @app.callback(
     Output('execution-date-dropdown', 'options'),
     Input('execution-date-dropdown', 'search_value')
@@ -160,4 +161,3 @@ def update_iv_graph(selected_execution_date, selected_expiration_date, selected_
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
