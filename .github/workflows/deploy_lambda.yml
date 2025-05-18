@@ -1,4 +1,4 @@
-name: Deploy to AWS Lambda
+name: Deploy web scraping and iv calculation to AWS Lambda
 
 on:
   pull_request:
