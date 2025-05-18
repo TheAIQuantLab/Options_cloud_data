@@ -26,7 +26,6 @@ jobs:
           find python/ -type f -name "*.pyc" -delete
           mkdir -p package
           cp lambda/scraping_and_iv.py package/
-          cp -r db package/
           cp -r python/* package/
           cd package
           zip -r ../lambda_function.zip .
