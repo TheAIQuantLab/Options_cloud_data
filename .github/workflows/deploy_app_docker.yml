@@ -1,0 +1,47 @@
+name: Deploy Dash App to AWS App Runner
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: your_aws_region
+  ECR_REPOSITORY: 479161062380.dkr.ecr.eu-north-1.amazonaws.com/docker_iv_app
+  APP_RUNNER_SERVICE_NAME: docker_iv_app # The name you gave your App Runner service
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::479161062380:role/AppRunnerECRAccessRole
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Update AWS App Runner service
+        uses: aws-actions/aws-apprunner-deploy@latest
+        with:
+          service: docker_iv_servide
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
