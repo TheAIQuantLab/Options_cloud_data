@@ -1,5 +1,4 @@
-# MIAX_Practica_Cloud
-Práctica de cloud del MIAX13
+# Proyecto cloud de obtención, procesado y acceso a datos de opciones financieras.
 
 url of APP: https://tpvdz5zv87.eu-west-1.awsapprunner.com 
 
